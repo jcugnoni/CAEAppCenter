@@ -180,7 +180,9 @@ Public Sub RunApp(iRow As Integer, mode As String)
           cmd = defaultTerminal & " -T " & appname & " -e " & runtime & " exec " & basepath &/ relpath &/ container & " " & command
         Else 
           If mode == "shell" Then ' try to run a basic shell if no command is given
-            cmd = defaultTerminal & " -T " & appname & " -e " & runtime & " shell " & basepath &/ relpath &/ container 
+            cmd = defaultTerminal & " -T " & appname & " -e " & runtime & " shell " & basepath &/ relpath &/ container
+          Else                    ' if no command supplied and not in shell mode, try to "singularity run" the app
+            cmd = defaultTerminal & " -T " & appname & " -e " & runtime & " run " & basepath &/ relpath &/ container
           Endif 
         Endif 
         PrintLogLn("Running command: " & cmd)
@@ -423,5 +425,13 @@ Public Sub Run_Click()
   iRow = GridView1.Row
   PrintLogLn("Running default app from selection : id = " & iRow & " name = " & GridView1[iRow, 1].Text)
   RunApp(iRow, "gui") 
+
+End
+
+Public Sub TextArea1_Change()
+
+  TextArea1.Pos = TextArea1.Length
+  TextArea1.EnsureVisible
+  TextArea1.Refresh
 
 End

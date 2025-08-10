@@ -1,7 +1,7 @@
 # Gambas Project File 3.0
 Title=CAE App Center
 Startup=FMain
-Version=0.0.1
+Version=0.1.0
 Component=gb.image
 Component=gb.gui
 Component=gb.form
@@ -11,6 +11,7 @@ Component=gb.net
 Component=gb.net.curl
 Component=gb.xml
 Description="CAELinux App Center: your interface to install CAE applications as Singularity or other portable binary formats"
+Authors="Joël Cugnoni"
 TabSize=2
 Language=en_US
 SourcePath=/home/caelinux/build
@@ -42,3 +43,8 @@ Menus=ubuntu:"Applications/Science/Engineering"
 Categories=ubuntu:"Engineering;Science"
 Groups=ubuntu:"science"
 ExtraDependencies=*:"squashfs-tools\t\t\ncryptsetup\t\t\nrunc\t\t\nwget\t\t"
+Tags=Education,ComputerScience,Science
+Dependencies=wget,singularity
+GambasVersion=3.19
+WebSite=https://www.caelinux.com
+CreateMenu=1

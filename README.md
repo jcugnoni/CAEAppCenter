@@ -31,8 +31,14 @@ if all goes well, CAEAppCenter will download repository.xml file from https://ca
 Please note that this application is currently in its first alpha stage (functionnal, but without much "safe guards"), use it at you own risks
 
 ## TODO:
+- add "post install" script in repository.xml and app => for example to run SalomeMeca "run --app install" the first time
+- build binary package
+- build packages for different distros, try portable appimage? or flatpak?
+- add instructions to install singularity & other pre-requisites 
 - add settings window to change defaults (like app path, terminal, etc..)
 - correctly update text area (scroll to end...)
+- show app specific Icon
+- add longer description in repository.xml and  print it when selecting app in list
 - add versionning system to apps (need to reformat repository.xml and dir structure...)
 - check file integrity with checksum
 - add support for external URLs for file download...
