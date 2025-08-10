@@ -1,0 +1,46 @@
+# Gambas Form File 3.0
+
+{ Form Form
+  MoveScaled(0,0,129,71)
+  Text = ("CAE App Center v0.1")
+  Resizable = False
+  { ContextMenu Menu
+    Text = ("Context Menu")
+    Visible = False
+    { Run Menu
+      Text = ("Run")
+    }
+    { RunShell Menu
+      Action = "RunShell"
+      Text = ("Run Shell")
+    }
+    { sep1 Menu
+    }
+    { Install Menu
+      Text = ("Install")
+    }
+    { Remove Menu
+      Text = ("Remove")
+    }
+  }
+  { GridView1 GridView
+    MoveScaled(1,1,125,52)
+    Expand = True
+    PopupMenu = "ContextMenu"
+    Mode = Select.Single
+    Sorted = True
+  }
+  { TextArea1 TextArea
+    MoveScaled(1,54,125,15)
+    ReadOnly = True
+  }
+}
+
+# Gambas Action File 3.0
+
+{ Actions
+  { Action RunShell
+    Text = "Run Shell"
+    Shortcut = ""
+  }
+}

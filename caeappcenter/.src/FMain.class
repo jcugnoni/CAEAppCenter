@@ -1,0 +1,415 @@
+' Gambas class file
+
+' Default configuration
+Public Const basepath As String = "~/cae/apps"
+Public Const defaultRepoURL As String = "https://www.caelinux.com/repo" 
+Public Const NewLine As String = "\n"
+Public Const defaultTerminal As String = "x-terminal-emulator"
+
+Public Const tstAppName As String = "MyGreatApp"
+Public Const tstAppTxt As String = "This is a great app"
+Public Const tstAppIcon As String = "./defaultAppIcon.png"
+Public Const tstAppStatus As String = "Not Installed"
+  
+Sub InitTable(nRow As Integer)
+
+  Dim nColumns As Integer
+  Dim iRow As Integer
+  
+  nColumns = 4
+  
+  ' setup / fill grid view
+  GridView1.Columns.Count = nColumns
+  GridView1.Rows.Count = nRow + 1
+  ' gridview sizing
+  GridView1.Columns[0].Width = 96
+  GridView1.Columns[1].Width = 150
+  GridView1.Columns[2].Width = 500
+  GridView1.Columns[3].Width = 100
+  
+  GridView1.Rows[0].Height = 24
+  ' header
+  GridView1[0, 1].Text = "Name"
+  GridView1[0, 1].Alignment = Align.Center
+  GridView1[0, 2].Text = "Description"
+  GridView1[0, 2].Alignment = Align.Center
+  GridView1[0, 3].Text = "Status"
+  GridView1[0, 3].Alignment = Align.Center
+
+End
+
+Public Sub setTableElement(iRow As Integer, appname As String, apptxt As String, appstatus As String, appicon As String)
+  
+  ' add items
+  GridView1.Rows[iRow].Height = 96
+  GridView1[iRow, 0].Picture = Picture[appicon]
+  GridView1[iRow, 1].Text = appname
+  GridView1[iRow, 2].Text = apptxt
+  GridView1[iRow, 3].Text = appstatus
+
+End
+
+ 
+ ' download a web directory to local app storage, recursivelly using wget
+ 
+ Public Sub getWebDirectory(url As String, localpath As String)
+  ' example cmd: wget -r -np -nH --cut-dirs=1 -c -P /opt/cae/apps/ http://localhost:8000/repo/elmer-singularity/
+  
+  ' split url to isolate hostname/port, basedirectory and app directory
+  Dim urlelems As String[] = Split(Trim$(url), "/")
+  Dim elem As String
+  For Each elem In urlelems 
+    Print elem
+  Next
+  Print urlelems.Count
+  Dim cutdirs As Integer = urlelems.Count - 4
+  Dim relpath As String = urlelems.Last
+  Dim fullpath As String = basepath &/ relpath
+
+  Dim cmdString As String = "wget -r -nH -np --cut-dirs=" & cutdirs & " -c -P " & localpath & " " & url
+  Dim msgTxt As String
+  Dim Proc As Process
+  PrintLogLn("Running wget command to download directory:" & url & "->" & fullpath) 
+  RunShellLog(cmdString)
+  PrintLogLn("Listing of destination directory:")
+  RunShellLog("ls -lh " & fullpath)
+   PrintLogLn("Done downloading directory " & url & "->" & fullpath)
+ End
+
+Public Sub PrintLog(txt As String)
+  
+  Print txt
+  TextArea1.Text = TextArea1.Text & txt
+  TextArea1.Pos = TextArea1.Length
+  TextArea1.EnsureVisible
+  TextArea1.Refresh
+
+End
+
+Public Sub PrintLogLn(txt As String)
+  PrintLog(txt & NewLine)
+End
+
+Public Sub CMDProcess_Read()
+  
+  Dim s As String
+  Line Input #Last, s
+  PrintLog(s)
+  
+End
+
+
+Public Sub RunShellLog(cmd As String)
+
+  Dim proc As Process
+  PrintLogLn("Running : " & cmd)
+  proc = Shell cmd For Input As "CMDProcess"
+  proc.Wait
+  PrintLogLn("Done")
+  
+End
+
+
+' initialize application
+Public Sub Form_Open()
+  
+  InitApp
+
+End
+
+   
+Public Sub RunApp(iRow As Integer, mode As String)
+  
+   ' get installation details from repository.xml
+  ' read XML
+  Dim rep As New XmlDocument
+  rep.Open(basepath &/ "repository.xml")
+  Dim xmlroot, xmlelem As XmlElement
+  Dim xmlelems As XmlElement[]
+  xmlroot = rep.Root
+  If (xmlroot.Name <> "repository") Then 
+    Message.Error("Repository.xml invalid: root not a repository object")
+    Return 
+  Endif 
+  xmlelems = xmlroot.GetChildrenByTagName("application")
+  PrintLogLn("Loading repository file: found " & xmlelems.Count & " apps")
+  xmlelem = xmlelems[iRow - 1]
+  Dim appname, apptxt, appruntime, appstatus, relpath, fullpath As String
+  appname = Trim$(xmlelem.GetChildrenByTagName("name")[0].TextContent)
+  apptxt = Trim$(xmlelem.GetChildrenByTagName("description")[0].TextContent)
+  appruntime = Trim$(xmlelem.GetChildrenByTagName("runtime")[0].TextContent)
+  relpath = Trim$(xmlelem.GetChildrenByTagName("relpath")[0].TextContent)
+  fullpath = basepath &/ relpath  
+  If Exist(fullpath) Then 
+    ' run shell based on repository command, or if not define run default shell of the image
+    Dim runtime As String = Trim$(xmlelem.GetChildrenByTagName("runtime")[0].TextContent)
+    Dim container As String = Trim$(xmlelem.GetChildrenByTagName("container")[0].TextContent)
+    Dim apps As XmlElement[] = xmlelem.GetChildrenByTagName("apps")[0].GetChildrenByTagName("launcher")
+    Dim launcher, chosenLauncher As XmlElement
+    Dim foundLauncher As Integer = 0 
+    PrintLogLn("> package " & appname & " exposes " & apps.count & " apps")
+    Dim type, title, command, icon As String
+    For Each launcher In apps
+      type = Trim$(launcher.GetAttribute("type"))
+      title = Trim$(launcher.TextContent)
+      PrintLogLn(">  Launcher: " & title & " type = " & type)
+      If (type == mode) And (foundLauncher < 1) Then
+        foundLauncher = 1
+        chosenLauncher = launcher 
+      Endif
+    Next
+    If foundLauncher > 0 Then
+      Dim cmd As String
+      type = Trim$(chosenLauncher.GetAttribute("type"))
+      command = Trim$(chosenLauncher.GetAttribute("command"))
+      ' run that command in terminal
+      If runtime == "singularity" Then 
+        If command <> "" Then 
+          cmd = defaultTerminal & " -T " & appname & " -e " & runtime & " exec " & basepath &/ relpath &/ container & " " & command
+        Else 
+          If mode == "shell" Then ' try to run a basic shell if no command is given
+            cmd = defaultTerminal & " -T " & appname & " -e " & runtime & " shell " & basepath &/ relpath &/ container 
+          Endif 
+        Endif 
+        PrintLogLn("Running command: " & cmd)
+        Shell cmd
+      Else 
+        cmd = defaultTerminal & " -T " & appname & " -e " & runtime & basepath &/ relpath &/ container & " " & command
+        PrintLogLn("Running command: " & cmd)
+        Shell cmd
+        Return 
+      Endif 
+    Else 
+      ' run default shell
+      If runtime == "singularity" Then 
+        cmd = defaultTerminal & " -T " & appname & " -e " & runtime & " shell " & basepath &/ relpath &/ container 
+        PrintLogLn("Running command: " & cmd)
+        Shell cmd
+      Else 
+        Message.Error("No default shell for this runtime " & runtime)
+        Return 
+      Endif 
+    Endif
+  
+  Else 
+    PrintLogLn("App not installed, cannot run shell into container")
+    Return 
+  Endif 
+
+End
+
+Public Sub Install_Click()
+
+  Dim iRow As Integer
+  'Get selection
+  iRow = GridView1.Row
+  PrintLogLn("Installing selection : id = " & iRow & " name = " & GridView1[iRow, 1].Text)
+  ' get installation details from repository.xml
+  ' read XML
+  Dim rep As New XmlDocument
+  rep.Open(basepath &/ "repository.xml")
+  Dim xmlroot, xmlelem As XmlElement
+  Dim xmlelems As XmlElement[]
+  xmlroot = rep.Root
+  If (xmlroot.Name <> "repository") Then 
+    Message.Error("Repository.xml invalid: root not a repository object")
+    Return 
+  Endif 
+  xmlelems = xmlroot.GetChildrenByTagName("application")
+  PrintLogLn("Loading repository file: found " & xmlelems.Count & " apps")
+  xmlelem = xmlelems[iRow - 1]
+  Dim appname, apptxt, appruntime, appstatus, relpath, fullpath As String
+  appname = Trim$(xmlelem.GetChildrenByTagName("name")[0].TextContent)
+  apptxt = Trim$(xmlelem.GetChildrenByTagName("description")[0].TextContent)
+  appruntime = Trim$(xmlelem.GetChildrenByTagName("runtime")[0].TextContent)
+  relpath = Trim$(xmlelem.GetChildrenByTagName("relpath")[0].TextContent)
+  fullpath = basepath &/ relpath  
+  If Exist(fullpath) Then 
+    appstatus = "Installed"
+    Dim response As Integer = Message.Question("App is already installed in" & fullpath, "Skip", "Overwrite")
+    If response == 1 Then 
+      Return  
+    Else 
+      PrintLogLn("Remove app dir")
+      RunShellLog("rm -rf " & fullpath) 
+    Endif 
+  Else 
+    appstatus = "Not Installed"
+  Endif
+  PrintLogLn("> Installing " & appname & " : " & apptxt & "; runtime: " & appruntime & " destination " & fullpath)
+  Dim url As String = defaultRepoURL &/ relpath
+  ' download files
+  getWebDirectory(url, basepath)
+  ' setup launchers and icons
+  
+  ' update app grid
+  appstatus = "Installed"
+  setTableElement(iRow, appname, apptxt, appstatus, tstAppIcon)
+ 
+  
+End
+
+Public Sub InitApp()
+  
+  ' check if paths exist if not create basepath
+  ' check repository file, if fail download default
+  If Exist(basepath) Then 
+    ' load repo
+    PrintLogLn("App directory found in " & basepath)
+  Else 
+    PrintLogLn("Make app dir")
+    RunShellLog("mkdir -p " & basepath) 
+  Endif 
+
+  If Exist(basepath &/ "repository.xml") Then 
+    PrintLogLn("backup local repo file as repository.xml.bak")
+    RunShellLog("cp " & basepath &/ "repository.xml " & basepath &/ "repository.xml.bak")
+  Endif 
+  PrintLogLn("Download default repository")
+  Dim url As String = defaultRepoURL &/ "repository.xml"
+  PrintLogLn("Getting repository file : " & URL)
+  Dim filepath As String = basepath &/ "repository.xml"
+  GetFile(url, filepath)
+  
+ ' read XML
+  Dim rep As New XmlDocument
+  Try rep.Open(basepath &/ "repository.xml")
+  If Error Then 
+    Message.Error("The repository.xml cannot be loaded. Probably a download problem, please check internet connectivity!")
+  Endif
+  
+  Dim xmlroot, xmlelem As XmlElement
+  Dim xmlelems As XmlElement[]
+  xmlroot = rep.Root
+  If (xmlroot.Name <> "repository") Then 
+    Message.Error("Repository.xml invalid: root not a repository object; trying to restore last known back")
+    RunShellLog("cp " & basepath &/ "repository.xml.bak " & basepath &/ "repository.xml")
+    If Exist(basepath &/ "repository.xml") Then 
+      rep.Open(basepath &/ "repository.xml")
+      xmlroot = rep.Root
+      If (xmlroot.Name <> "repository") Then 
+         Message.Error("Repository.xml still invalid: root not a repository object; fix your internet connection.")
+      Endif
+    Endif
+    Return 
+  Endif 
+  xmlelems = xmlroot.GetChildrenByTagName("application")
+  PrintLogLn("Loading repository file: found " & xmlelems.Count & " apps")
+  
+  ' setup GUI table
+  InitTable(xmlelems.Count)
+  ' populate table
+  Dim iRow As Integer = 0
+  For Each xmlelem In xmlelems 
+    iRow = iRow + 1
+    Dim appname, apptxt, appruntime, appstatus, relpath, fullpath As String
+    appname = Trim$(xmlelem.GetChildrenByTagName("name")[0].TextContent)
+    apptxt = Trim$(xmlelem.GetChildrenByTagName("description")[0].TextContent)
+    appruntime = Trim$(xmlelem.GetChildrenByTagName("runtime")[0].TextContent)
+    relpath = Trim$(xmlelem.GetChildrenByTagName("relpath")[0].TextContent)
+    fullpath = basepath &/ relpath 
+    If Exist(fullpath) Then 
+      appstatus = "Installed"
+    Else 
+      appstatus = "Not Installed"
+    Endif
+    PrintLogLn("> " & appname & " : " & apptxt & "; runtime: " & appruntime)
+    setTableElement(iRow, appname, apptxt, appstatus, tstAppIcon)
+  Next
+  
+End
+
+Public Sub GetFile(url As String, filepath As String)
+
+  Dim hClient As HttpClient
+  Dim sBuffer As String
+
+  hClient = New HttpClient As "hClient"
+  hClient.URL = url
+  hClient.Async = False
+  hClient.Timeout = 60
+  hClient.Get
+
+  PrintLogLn("Begin download from URL = " & url)
+  If hClient.Status < 0 Then
+    PrintLogLn("ERROR in download")
+  Else
+    ' Success - read the data
+    If Lof(hClient) Then sBuffer = Read #hClient, Lof(hClient)
+    PrintLogLn(sBuffer)
+    Dim fid As File 
+    fid = Open filepath For Write Create
+    Print #fid, sBuffer
+    fid.Close 
+  End If
+
+  PrintLogLn("Download end")
+
+End
+
+
+Public Sub Remove_Click()
+
+  Dim iRow As Integer
+  'Get selection
+  iRow = GridView1.Row
+  PrintLogLn("Removing selection : id = " & iRow & " name = " & GridView1[iRow, 1].Text)
+ 
+   ' get installation details from repository.xml
+  ' read XML
+  Dim rep As New XmlDocument
+  rep.Open(basepath &/ "repository.xml")
+  Dim xmlroot, xmlelem As XmlElement
+  Dim xmlelems As XmlElement[]
+  xmlroot = rep.Root
+  If (xmlroot.Name <> "repository") Then 
+    Message.Error("Repository.xml invalid: root not a repository object")
+    Return 
+  Endif 
+  xmlelems = xmlroot.GetChildrenByTagName("application")
+  PrintLogLn("Loading repository file: found " & xmlelems.Count & " apps")
+  xmlelem = xmlelems[iRow - 1]
+  Dim appname, apptxt, appruntime, appstatus, relpath, fullpath As String
+  appname = Trim$(xmlelem.GetChildrenByTagName("name")[0].TextContent)
+  apptxt = Trim$(xmlelem.GetChildrenByTagName("description")[0].TextContent)
+  appruntime = Trim$(xmlelem.GetChildrenByTagName("runtime")[0].TextContent)
+  relpath = Trim$(xmlelem.GetChildrenByTagName("relpath")[0].TextContent)
+  fullpath = basepath &/ relpath  
+  If Exist(fullpath) Then 
+    appstatus = "Installed"
+     
+   Dim response As Integer = Message.Question("Ok to remove " & " " & " ?\n All content in the directory " & fullpath & "will be deleted!", "Skip", "Remove")
+   If response == 1 Then 
+      Return  
+    Else 
+      PrintLogLn("Removing app dir")
+      RunShellLog("rm -rf " & fullpath) 
+      ' also remove launchers... (which file names ?)
+    Endif 
+  Else
+    PrintLogLn("App not installed, no need to remove") 
+  Endif
+  appstatus = "Not Installed"
+  setTableElement(iRow, appname, apptxt, appstatus, tstAppIcon)
+  PrintLogLn("> Removing " & appname & " : " & apptxt & "; runtime: " & appruntime & " DONE ")
+End
+
+Public Sub RunShell_Click()
+
+  Dim iRow As Integer
+  'Get selection
+  iRow = GridView1.Row
+  PrintLogLn("Running shell into selection : id = " & iRow & " name = " & GridView1[iRow, 1].Text)
+  RunApp(iRow, "shell") 
+
+End
+
+Public Sub Run_Click()
+
+  Dim iRow As Integer
+  'Get selection
+  iRow = GridView1.Row
+  PrintLogLn("Running default app from selection : id = " & iRow & " name = " & GridView1[iRow, 1].Text)
+  RunApp(iRow, "gui") 
+
+End
