@@ -53,7 +53,7 @@ End
  ' download a web directory to local app storage, recursivelly using wget
  
  Public Sub getWebDirectory(url As String, localpath As String)
-  ' example cmd: wget -r -np -nH --cut-dirs=1 -c -P /opt/cae/apps/ http://localhost:8000/repo/elmer-singularity/
+  ' example cmd: wget -r -l1 -nH --no-parent --cut-dirs=1 -c -P /opt/cae/apps/ https://www.caelinux.com/repo/elmer-singularity/
   
   ' split url to isolate hostname/port, basedirectory and app directory
   Dim urlelems As String[] = Split(Trim$(url), "/")
@@ -66,14 +66,14 @@ End
   Dim relpath As String = urlelems.Last
   Dim fullpath As String = basepath &/ relpath
 
-  Dim cmdString As String = "wget -r -nH -np --cut-dirs=" & cutdirs & " -c -P " & localpath & " " & url
+  Dim cmdString As String = "wget -r -l1 -nH --no-parent --cut-dirs=" & cutdirs & " -c -P " & localpath & " " & url
   Dim msgTxt As String
   Dim Proc As Process
   PrintLogLn("Running wget command to download directory:" & url & "->" & fullpath) 
-  RunShellLog(cmdString)
-  PrintLogLn("Listing of destination directory:")
-  RunShellLog("ls -lh " & fullpath)
-   PrintLogLn("Done downloading directory " & url & "->" & fullpath)
+  RunShellLogBg(cmdString)
+  'PrintLogLn("Listing of destination directory:")
+  'RunShellLog("ls -lh " & fullpath)
+  'PrintLogLn("Done downloading directory " & url & "->" & fullpath)
  End
 
 Public Sub PrintLog(txt As String)
@@ -83,7 +83,8 @@ Public Sub PrintLog(txt As String)
   TextArea1.Pos = TextArea1.Length
   TextArea1.EnsureVisible
   TextArea1.Refresh
-
+  Wait
+  
 End
 
 Public Sub PrintLogLn(txt As String)
@@ -98,7 +99,7 @@ Public Sub CMDProcess_Read()
   
 End
 
-
+' Run Shell command in foreground (wait)
 Public Sub RunShellLog(cmd As String)
 
   Dim proc As Process
@@ -106,6 +107,17 @@ Public Sub RunShellLog(cmd As String)
   proc = Shell cmd For Input As "CMDProcess"
   proc.Wait
   PrintLogLn("Done")
+  
+End
+
+' Run Shell command in background (no wait)
+Public Sub RunShellLogBg(cmd As String)
+
+  Dim proc As Process
+  cmd = defaultTerminal & " -e " & cmd
+  PrintLogLn("Running in terminal: " & cmd)
+  proc = Shell cmd For Input As "CMDProcess"
+  PrintLogLn("Process started: " & cmd)
   
 End
 
