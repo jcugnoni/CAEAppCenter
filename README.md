@@ -9,7 +9,7 @@ Linux App to manage CAE applications distribution (using containers such as Sing
 - run / edit / build from there
 
 ## usage 
-CAEAppCenter working principle is to allow the user to select CAE apps and download them from caeliux.com repository.
+CAEAppCenter working principle is to allow the user to select CAE apps and download them from caelinux.com repository.
 
 The apps will be installed in user's home directory at ~/cae/apps
 
@@ -19,7 +19,7 @@ CAEAppCenter is also used to run the app either in GUI or in Shell mode
 
 - run caeappcenter 
 - see text area at the bottom to read messages : 
-if all goes well, CAEAppCenter will download repository.xml file from https://caeilinux.com/repo/  
+if all goes well, CAEAppCenter will download repository.xml file from https://caelinux.com/repo/  
 - in the list view above, you should see the list of available / installed CAE apps: right click on one app to show its "context menu"
 - in the context menu: you can choose either
   - Install : to download the app to ~/cae/apps
