@@ -41,7 +41,7 @@ Please note that this application is currently in its first beta stage (function
 - HelyxOS & OpenFOAM v7 (Singularity container): OpenFOAM v7 CFD/multiphysics solver with HELYXOS v2.4 GUI (old but still functionnal)
 - OpenRadioss (Singularity container, dev in progress) : Advanced non-linear explicit FE solver (can use INP files from PrePoMax as input)
 
-## TODO lsit:
+## TODO list:
 - add "post install" script in repository.xml and app => DONE, instead we use a custom launcher.sh script that runs the first time
 - build packages for different distros, try portable appimage? or flatpak? => DONE
 - add automated install of singularity or apptainer  => DONE : integrated relocatable apptainer install in the .AppImage
