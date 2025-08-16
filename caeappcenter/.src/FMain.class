@@ -161,6 +161,7 @@ Public Sub RunApp(iRow As Integer, mode As String)
     Dim foundLauncher As Integer = 0 
     PrintLogLn("> package " & appname & " exposes " & apps.count & " apps")
     Dim type, title, command, icon As String
+    ' find launcher command corresponding to the "type" of execution (shell, gui, ...)
     For Each launcher In apps
       type = Trim$(launcher.GetAttribute("type"))
       title = Trim$(launcher.TextContent)
@@ -170,35 +171,56 @@ Public Sub RunApp(iRow As Integer, mode As String)
         chosenLauncher = launcher 
       Endif
     Next
+
+    ' launcher found => run it !
     If foundLauncher > 0 Then
       Dim cmd As String
       type = Trim$(chosenLauncher.GetAttribute("type"))
       command = Trim$(chosenLauncher.GetAttribute("command"))
+      
+      ' substitute variables in command line
+      command = Replace$(command, "%runtime%", runtime)
+      command = Replace$(command, "%container%", basepath &/ relpath &/ container)
+      command = Replace$(command, "%app_path%", basepath &/ relpath)
+      
       ' run that command in terminal
       If runtime == "singularity" Then 
         If command <> "" Then 
-          cmd = defaultTerminal & " -T " & appname & " -e " & runtime & " exec " & basepath &/ relpath &/ container & " " & command
+          ' if command given, just run the given command
+          'cmd = defaultTerminal & " -T " & appname & " -e " & runtime & " exec " & basepath &/ relpath &/ container & " " & command
+          cmd = defaultTerminal & " -T '" & appname & "' -e " & command
         Else 
+          ' no command given, run default  
           If mode == "shell" Then ' try to run a basic shell if no command is given
-            cmd = defaultTerminal & " -T " & appname & " -e " & runtime & " shell " & basepath &/ relpath &/ container
+            cmd = defaultTerminal & " -T '" & appname & "' -e " & runtime & " shell " & basepath &/ relpath &/ container
           Else                    ' if no command supplied and not in shell mode, try to "singularity run" the app
-            cmd = defaultTerminal & " -T " & appname & " -e " & runtime & " run " & basepath &/ relpath &/ container
+            cmd = defaultTerminal & " -T '" & appname & "' -e " & runtime & " run " & basepath &/ relpath &/ container
           Endif 
-        Endif 
-        PrintLogLn("Running command: " & cmd)
+        Endif
+        PrintLogLn("Running command: " & cmd & " in " & basepath &/ relpath) 
+        'prepend change directory to command
+        'cmd = "cd " & basepath &/ relpath & "; " & cmd
+        'PrintLogLn("Running command: " & cmd & " in " & basepath &/ relpath) 
         Shell cmd
       Else 
-        cmd = defaultTerminal & " -T " & appname & " -e " & runtime & basepath &/ relpath &/ container & " " & command
-        PrintLogLn("Running command: " & cmd)
+        ' if runtime is not singularity
+        'cmd = defaultTerminal & " -T " & appname & " -e " & runtime & basepath &/ relpath &/ container & " " & command
+        cmd = defaultTerminal & " -T " & appname & " -e " & command
+        PrintLogLn("Running command: " & cmd & " in " & basepath &/ relpath)
+        'prepend change directory to command
+        cmd = "cd " & basepath &/ relpath & "; " & cmd
         Shell cmd
         Return 
       Endif 
     Else 
-      ' run default shell
+      ' launcher not found in XML repo, run default shell
       If runtime == "singularity" Then 
         cmd = defaultTerminal & " -T " & appname & " -e " & runtime & " shell " & basepath &/ relpath &/ container 
-        PrintLogLn("Running command: " & cmd)
+        PrintLogLn("Running command: " & cmd & " in " & basepath &/ relpath)
+        'prepend change directory to command
+        cmd = "cd " & basepath &/ relpath & "; " & cmd
         Shell cmd
+       
       Else 
         Message.Error("No default shell for this runtime " & runtime)
         Return 
