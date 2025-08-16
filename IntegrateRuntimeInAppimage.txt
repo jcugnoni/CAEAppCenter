@@ -1,0 +1,16 @@
+# integrate relocatable apptainer in CAEAppCenter Appimage
+
+cd ~/dev/CAEAppCenter_build/build/packages/appimage/
+mkdir custom_appimage
+./caeappcenter*.Appimage --appimage-extract
+cd squashfs-root
+cp -r ~/dev/apptainer/relocatable/install-dir/* .
+
+download appimagetool.Appimage 
+
+#cd squashfs-root
+# weird fix for icon erro in appimagetool
+cp caeappcenter.png caeappcenter.png.png
+cd ..
+
+appimagetool-x86_64.AppImage squashfs-root caeappcenter-0.1.0-x86_64_apptainer.AppImage 
