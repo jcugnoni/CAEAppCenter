@@ -14,7 +14,7 @@ CAEAppCenter working principle is to allow the user to select CAE apps and downl
 The apps will be installed in user's home directory at ~/cae/apps
 
 Each app is stored in a sub folder, in the form of a Singularity / Apptainer container image (.sif)
-
+## 
 CAEAppCenter is also used to run the app either in GUI or in Shell mode
 
 - run caeappcenter 
@@ -29,6 +29,14 @@ if all goes well, CAEAppCenter will download repository.xml file from https://ca
   
 ## Disclaimer
 Please note that this application is currently in its first beta stage (functionnal, but without much "safe guards"), use it at you own risks
+
+## List of applications (current state 16.8.2025), see https://www.caelinux.com/repo/ for full list
+- Salome-Meca 2024 / Code-Aster 17.4 MPI (Singularity container): CAD system / Pre-Post processor and advanced non-linear thermo mechanics FE solver
+- FreeCAD v1.0.2 (official AppImage) : versatile 3D CAD & CAE platform
+- ElmerFEM CSC (8.2025) (Singularity constainer): multi-physics FEM solver & GUI
+- PrePoMax v2.3.0 & Calculix (Wine / autoinstaller): non-linear thermo-mechanics solver (Calculix) with efficient GUI (PrePoMax)
+- HelyxOS & OpenFOAM v7 (Singularity container): OpenFOAM v7 CFD/multiphysics solver with HELYXOS v2.4 GUI (old but still functionnal)
+- OpenRadioss (Singularity container, dev in progress) : Advanced non-linear explicit FE solver (can use INP files from PrePoMax as input)
 
 ## TODO lsit:
 - add "post install" script in repository.xml and app => DONE, instead we use a custom launcher.sh script that runs the first time
