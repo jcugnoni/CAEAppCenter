@@ -28,12 +28,12 @@ if all goes well, CAEAppCenter will download repository.xml file from https://ca
   - Run SHell : Run a Shell (terminal) in the container image, to run commands interactivelly
   
 ## Disclaimer
-Please note that this application is currently in its first alpha stage (functionnal, but without much "safe guards"), use it at you own risks
+Please note that this application is currently in its first beta stage (functionnal, but without much "safe guards"), use it at you own risks
 
-## TODO:
-- add "post install" script in repository.xml and app => for example to run SalomeMeca "run --app install" the first time
-- build binary package
-- build packages for different distros, try portable appimage? or flatpak?
+## TODO lsit:
+- add "post install" script in repository.xml and app => DONE, instead we use a custom launcher.sh script that runs the first time
+- build packages for different distros, try portable appimage? or flatpak? => DONE
+- add automated install of singularity or apptainer  => DONE : integrated relocatable apptainer install in the .AppImage
 - add instructions to install singularity & other pre-requisites 
 - add settings window to change defaults (like app path, terminal, etc..)
 - correctly update text area (scroll to end...)
@@ -43,5 +43,5 @@ Please note that this application is currently in its first alpha stage (functio
 - check file integrity with checksum
 - add support for external URLs for file download...
 - add support for other type of "runtimes" like ...
-- add automated install of singularity or apptainer ? 
+
 
