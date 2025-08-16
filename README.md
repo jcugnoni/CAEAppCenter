@@ -2,11 +2,14 @@
 Linux App to manage CAE applications distribution (using containers such as Singularity/Apptainer)
 
 ## pre-requisites
-- gambas3, wget, singularity (or apptainer as "singularity" alias) 
+
+A. for development: gambas3, wget, singularity (full installation from source recommended or apptainer as "singularity" alias)
+B. to use the AppImage release (see here on the right): no pre-requisites in principle except common tools like bash, wget
 
 ## build
 - open caeappcenter in Gambas3 v3.19+
-- run / edit / build from there
+- run / edit / build installation package from there (for AppImage, you need to download AppImage_Builder and put it in $PATH)
+- build AppImage release: build AppImage from GAMBAS3 => integrate apptainer relocatable runtime (see notes)
 
 ## usage 
 CAEAppCenter working principle is to allow the user to select CAE apps and download them from caelinux.com repository.
